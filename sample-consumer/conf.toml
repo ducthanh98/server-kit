@@ -1,0 +1,20 @@
+[mysql]
+host = "127.0.0.1"
+port = 3360
+protocol = "tcp"
+username = "dev"
+password = "lionnix@1234"
+database = "lionnix"
+charset = "utf8"
+parse_time = true
+
+[rabbitmq]
+uri="amqp://guest:guest@localhost:5672/"
+retries=3
+internal_queue_size=1000
+
+[redis]
+address = "localhost:6379"
+
+[task]
+def="task.json"

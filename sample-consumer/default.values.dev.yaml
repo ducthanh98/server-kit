@@ -1,0 +1,32 @@
+replicaCount: 1
+
+app:
+  namespace: default
+  name: sample-consumer
+  port: 8888
+  env: dev
+  image_pull_policy: Always
+  type: consumer
+  mem_limit: 0
+  mem_required: 0
+  cpu_limit: 100
+  cpu_required: 0
+  storage_limit: 0
+  storage_required: 0
+
+config:
+  remote-address: 10.0.2.177:8500
+  remote-keys: /database/mysql/conf.toml,/database/entity/conf.toml
+  sd-address:  consul-consul-server.consul.svc.cluster.local:8500
+  tracing-address: no-addr
+
+
+image:
+  name: nexus.lionnix.net/consumer/sample-consumer
+  tag: latest
+
+# only set for internet exposed api like api-gateway or tracking.
+# for other app, leave it as is
+service:
+  type:
+  nodePort: 0
