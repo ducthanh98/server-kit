@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ducthanh98/server-kit/kit/consumer/entity"
+	"github.com/ducthanh98/server-kit/kit/logger"
 	"github.com/ducthanh98/server-kit/kit/utils/string_utils"
 	amqp "github.com/rabbitmq/amqp091-go"
-	log "github.com/sirupsen/logrus"
 	"net"
 	"strings"
 
@@ -112,7 +112,7 @@ func (c *Consumer) reconnect() (<-chan amqp.Delivery, error) {
 	time.Sleep(30 * time.Second)
 
 	if err := c.Connect(); err != nil {
-		log.Errorln("Could not connect in reconnect call", "errError()", err.Error())
+		logger.Log.Errorw("Could not connect in reconnect call", "errError()", err.Error())
 		return nil, err
 	}
 
@@ -129,7 +129,7 @@ func (c *Consumer) Connect() error {
 
 	var err error
 
-	log.Infof("Connecting to %q", string_utils.CensorString(c.config.URI))
+	logger.Log.Infof("Connecting to %q", string_utils.CensorString(c.config.URI))
 
 	c.conn, err = amqp.DialConfig(c.config.URI, amqp.Config{
 		Dial: func(network, addr string) (net.Conn, error) {
@@ -142,18 +142,18 @@ func (c *Consumer) Connect() error {
 
 	go func() {
 		// Waits here for the channel to be closed
-		log.Debugf("Closing: %s", <-c.conn.NotifyClose(make(chan *amqp.Error)))
+		logger.Log.Debugf("Closing: %s", <-c.conn.NotifyClose(make(chan *amqp.Error)))
 		// Let Handle know it's not time to reconnect
 		c.done <- errors.New("Channel Closed")
 	}()
 
-	log.Debugf("Got Connection, getting Channel")
+	logger.Log.Debugf("Got Connection, getting Channel")
 	c.channel, err = c.conn.Channel()
 	if err != nil {
 		return fmt.Errorf("Channel: %s", err)
 	}
 
-	log.Debugf("Got Channel, declaring Exchange (%q)", c.config.ExchangeConfig.Name)
+	logger.Log.Debugf("Got Channel, declaring Exchange (%q)", c.config.ExchangeConfig.Name)
 	if err = c.channel.ExchangeDeclare(
 		c.config.ExchangeConfig.Name,
 		c.config.ExchangeConfig.Type,
@@ -165,14 +165,14 @@ func (c *Consumer) Connect() error {
 	); err != nil {
 		return fmt.Errorf("Exchange Declare: %s", err)
 	}
-	log.Infof(" Connected to %q", string_utils.CensorString(c.config.URI))
+	logger.Log.Infof(" Connected to %q", string_utils.CensorString(c.config.URI))
 
 	return nil
 }
 
 // AnnounceQueue sets the queue that will be listened to for this connection
 func (c *Consumer) AnnounceQueue() (<-chan amqp.Delivery, error) {
-	log.Debugf("declared Exchange, declaring Queue %q", c.config.QueueConfig.Name)
+	logger.Log.Debugf("declared Exchange, declaring Queue %q", c.config.QueueConfig.Name)
 	queue, err := c.channel.QueueDeclare(
 		c.config.QueueConfig.Name,
 		c.config.QueueConfig.Durable,
@@ -212,7 +212,7 @@ func (c *Consumer) AnnounceQueue() (<-chan amqp.Delivery, error) {
 		autoAck = false
 	}
 
-	log.Debugf("Declared Queue (%q %d messages, %d consumers), binding to Exchange (key %q)",
+	logger.Log.Debugf("Declared Queue (%q %d messages, %d consumers), binding to Exchange (key %q)",
 		queue.Name, queue.Messages, queue.Consumers, bindingKey)
 
 	// Qos determines the amount of messages that the queue will pass to you before
@@ -236,7 +236,7 @@ func (c *Consumer) AnnounceQueue() (<-chan amqp.Delivery, error) {
 		return nil, fmt.Errorf("Queue Bind: %s", err)
 	}
 
-	log.Debugf("Queue bound to Exchange, starting Consume")
+	logger.Log.Debugf("Queue bound to Exchange, starting Consume")
 	deliveries, err := c.channel.Consume(
 		c.config.QueueConfig.Name,
 		"",
@@ -283,14 +283,14 @@ func (c *Consumer) Handle(
 
 					// Very likely chance of failing
 					// should not cause worker to terminate
-					log.Errorln("Reconnecting Error", "err", err, "retries", retries)
+					logger.Log.Errorw("Reconnecting Error", "err", err, "retries", retries)
 					retries++
 					if retries > c.retries {
 						panic(errors.New("Cannot reconnect to entity"))
 					}
 					d, err = c.reconnect()
 				}
-				log.Infof("Reconnected")
+				logger.Log.Infof("Reconnected")
 			} else { // stop
 				return
 			}

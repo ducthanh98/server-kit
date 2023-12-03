@@ -6,8 +6,8 @@ import (
 	"github.com/ducthanh98/server-kit/kit/consumer/entity"
 	"github.com/ducthanh98/server-kit/kit/consumer/input"
 	"github.com/ducthanh98/server-kit/kit/consumer/output"
+	"github.com/ducthanh98/server-kit/kit/logger"
 	"github.com/ducthanh98/server-kit/kit/utils/string_utils"
-	log "github.com/sirupsen/logrus"
 	"runtime"
 	"strings"
 	"sync"
@@ -75,20 +75,20 @@ func (t *Task) InitializeHandler(handlers map[string]HandlerWOption) {
 		if viper.IsSet("task.idle_sleep_time") {
 			v.IdleSleeptime = viper.GetInt("task.idle_sleep_time")
 		}
-		log.Infof("Setup idle time in %v (ms)", v.IdleSleeptime)
+		logger.Log.Infof("Setup idle time in %v (ms)", v.IdleSleeptime)
 		t.consumerHandler[k] = v
 	}
 }
 
 func (t *Task) buildInput() {
 	for _, i := range t.TaskDefinition.Inputs {
-		log.Debug("input: ", string_utils.ToJSONString(t.TaskDefinition.Inputs))
+		logger.Log.Debug("input: ", string_utils.ToJSONString(t.TaskDefinition.Inputs))
 		switch i.Mode {
 		case input.RabbitmqMode:
 			c, err := input.BuildRabbitmqInput(t.ctx,
 				t.TaskDefinition.Group.Name, i.Config.(*entity.RmqInputConf))
 			if err != nil {
-				log.Fatal("Cannot connect to entity", i)
+				logger.Log.Fatal("Cannot connect to entity", i)
 				continue
 			}
 
@@ -106,10 +106,10 @@ func (t *Task) buildOutput() {
 			if t.producer == nil {
 				p, err := output.BuildRabbitmqOutput(co)
 				if err != nil {
-					log.Fatal("Cannot initialize entity producer", i, err)
+					logger.Log.Fatal("Cannot initialize entity producer", i, err)
 				}
 				if err := p.DeclareSpecificExchN(co.Exch); err != nil {
-					log.Fatal("Cannot declare exchange due to error", i, err)
+					logger.Log.Fatal("Cannot declare exchange due to error", i, err)
 				}
 				t.producer = p
 			} else {
@@ -126,7 +126,7 @@ func (t *Task) buildIO() {
 
 func (t *Task) findHandlerForConsumer(consumerName string) (HandlerWOption, error) {
 	// find exactly
-	log.Debugf("Consumer name: %v and t_consumer", consumerName, t.consumerHandler)
+	logger.Log.Debugf("Consumer name: %v and t_consumer", consumerName, t.consumerHandler)
 	if v, ok := t.consumerHandler[consumerName]; ok {
 		return v, nil
 	}
@@ -146,18 +146,18 @@ func (t *Task) findHandlerForConsumer(consumerName string) (HandlerWOption, erro
 
 func (t *Task) start() {
 	wait := &sync.WaitGroup{}
-	log.Infoln("t_consumer: ", t.consumers)
+	logger.Log.Infow("t_consumer: ", t.consumers)
 	for k, v := range t.consumers {
 		if h, err := t.findHandlerForConsumer(k); err == nil {
-			log.Infof("Bind %v to %v", h.MsgHandler, k)
+			logger.Log.Infof("Bind %v to %v", h.MsgHandler, k)
 			wait.Add(1)
 			go run(t.ctx, t, k, v, h, wait)
 		} else {
-			log.Fatal("Cannot find handler for consumer ", k)
+			logger.Log.Fatal("Cannot find handler for consumer ", k)
 		}
 	}
 	wait.Wait()
-	log.Info("Exiting task...")
+	logger.Log.Info("Exiting task...")
 }
 
 func (t *Task) stop() {
@@ -166,6 +166,6 @@ func (t *Task) stop() {
 	if t.producer != nil {
 		defer t.producer.Close()
 	}
-	log.Info("Wait for other task to complete...")
+	logger.Log.Info("Wait for other task to complete...")
 	time.Sleep(100 * time.Millisecond)
 }

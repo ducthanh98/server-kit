@@ -2,7 +2,7 @@ package mysql_driver
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
+	"github.com/ducthanh98/server-kit/kit/logger"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -13,7 +13,7 @@ import (
 type MysqlDriver struct {
 }
 
-type mysqlConfiguration struct {
+type MysqlConfiguration struct {
 	Port      int
 	Host      string
 	Username  string
@@ -25,9 +25,9 @@ type mysqlConfiguration struct {
 	Debug     bool
 }
 
-func DefaultMysqlFromConfig(opts *mysqlConfiguration) *mysqlConfiguration {
+func DefaultMysqlFromConfig(opts *MysqlConfiguration) *MysqlConfiguration {
 	if opts == nil {
-		opts = &mysqlConfiguration{
+		opts = &MysqlConfiguration{
 			Host:      viper.GetString("mysql.host"),
 			Port:      viper.GetInt("mysql.port"),
 			Username:  viper.GetString("mysql.username"),
@@ -42,9 +42,9 @@ func DefaultMysqlFromConfig(opts *mysqlConfiguration) *mysqlConfiguration {
 	return opts
 }
 
-func (d MysqlDriver) NewConnection() (*gorm.DB, error) {
-	opts := DefaultMysqlFromConfig(nil)
-	log.Info("PARAM: ", buildMysqlConnectionParam(opts))
+func (d MysqlDriver) NewConnection(conn interface{}) (*gorm.DB, error) {
+	opts := DefaultMysqlFromConfig(conn.(*MysqlConfiguration))
+	logger.Log.Info("PARAM: ", buildMysqlConnectionParam(opts))
 	db, err := gorm.Open(mysql.Open(buildMysqlConnectionParam(opts)), &gorm.Config{})
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func (d MysqlDriver) NewConnection() (*gorm.DB, error) {
 	return db, nil
 }
 
-func buildMysqlConnectionParam(opts *mysqlConfiguration) string {
+func buildMysqlConnectionParam(opts *MysqlConfiguration) string {
 	param := fmt.Sprintf(
 		"%s:%s@tcp(%s:%d)/%s",
 		opts.Username,

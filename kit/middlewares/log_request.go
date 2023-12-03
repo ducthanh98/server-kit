@@ -3,8 +3,8 @@ package middlewares
 import (
 	"bytes"
 	"fmt"
+	"github.com/ducthanh98/server-kit/kit/logger"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"runtime"
@@ -34,9 +34,9 @@ func LogRequestMiddleware(c *gin.Context) {
 	message := fmt.Sprintf("%v Go routines: %v  Uri: %v, Method: %v, Body: %v, Resp code: %v, Resp body: %v", time.Now().Format(time.RFC822),
 		runtime.NumGoroutine(), c.Request.RequestURI, c.Request.Method, string(bodyBytes), c.Writer.Status(), blw.body.String())
 	if c.Writer.Status() != http.StatusOK {
-		log.Errorf(message)
+		logger.Log.Errorf(message)
 	} else {
-		log.Infof(message)
+		logger.Log.Infof(message)
 	}
 
 }

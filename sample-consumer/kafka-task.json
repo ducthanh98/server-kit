@@ -1,0 +1,45 @@
+{
+  "type": "task",
+  "name": "test",
+  "group": {
+    "name": "test"
+  },
+  "inputs": [
+    {
+      "mode": "rabbitmq",
+      "exch": {
+        "name": "sample",
+        "type": "direct",
+        "auto_delete": false,
+        "internal": false,
+        "durable": true,
+        "exclusive": false,
+        "nowait": false
+      },
+      "queue": {
+        "name": "sample",
+        "auto_delete": false,
+        "internal": false,
+        "durable": true,
+        "exclusive": false,
+        "nowait": false,
+        "routing_key": ""
+      },
+      "batch_ack": true
+    }
+  ],
+  "outputs": [
+    {
+      "mode": "rabbitmq",
+      "exch": {
+        "name": "output",
+        "type": "fanout",
+        "auto_delete": false,
+        "internal": false,
+        "durable": true,
+        "exclusive": false,
+        "nowait": false
+      }
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 package consumer
 
 import (
-	log "github.com/sirupsen/logrus"
+	"github.com/ducthanh98/server-kit/kit/logger"
 	"time"
 )
 
@@ -24,7 +24,7 @@ func Bootstrapping(taskDef string, initFunc Callback) {
 			}
 		}
 	} else {
-		log.Fatal("Cannot initialize an empty worker.")
+		logger.Log.Fatal("Cannot initialize an empty worker.")
 	}
 	time.Sleep(2 * time.Second)
 	w.Walk()

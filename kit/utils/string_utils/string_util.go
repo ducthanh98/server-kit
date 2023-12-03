@@ -4,8 +4,29 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
-	log "github.com/sirupsen/logrus"
+	"github.com/ducthanh98/server-kit/kit/logger"
+	"strings"
 )
+
+// IsStringSliceContains -- check slice contain string
+func IsStringSliceContains(stringSlice []string, searchString string) bool {
+	for _, value := range stringSlice {
+		if value == searchString {
+			return true
+		}
+	}
+	return false
+}
+
+// StringTrimSpace -- trim space of string
+func StringTrimSpace(s string) string {
+	return strings.TrimSpace(s)
+}
+
+// IsStringEmpty -- check if string is empty
+func IsStringEmpty(s string) bool {
+	return s == ""
+}
 
 func CensorString(str string) string {
 	if len(str) <= 6 {
@@ -44,7 +65,7 @@ func generateRandomBytes(n int) ([]byte, error) {
 func ToJSONString(v interface{}) string {
 	b, err := json.Marshal(v)
 	if err != nil {
-		log.Warnf("Error When convert interface : %v to json string, detail: %v", v, err)
+		logger.Log.Warnf("Error When convert interface : %v to json string, detail: %v", v, err)
 		return ""
 	}
 	return string(b)

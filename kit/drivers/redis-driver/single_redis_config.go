@@ -2,7 +2,7 @@ package redis_driver
 
 import (
 	"github.com/go-redis/redis"
-	log "github.com/sirupsen/logrus"
+	"github.com/ducthanh98/server-kit/kit/logger"
 	"time"
 )
 
@@ -31,7 +31,7 @@ func (conn *SingleConnection) BuildRedisClient() (redis.UniversalClient, error) 
 		conn.writeTimeout = DefaultWriteTimeout
 	}
 
-	log.Debugf("redis single - address: %v, pass: %v, db: %v, pollSize: %v, readTimeout: %v ms, writeTimeout: %v ms",
+	logger.Log.Debugf("redis single - address: %v, pass: %v, db: %v, pollSize: %v, readTimeout: %v ms, writeTimeout: %v ms",
 		conn.address, conn.password, conn.db, conn.poolSize, conn.readTimeout, conn.writeTimeout)
 
 	return redis.NewClient(

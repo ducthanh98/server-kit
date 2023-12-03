@@ -3,7 +3,7 @@ package consumer
 import (
 	"context"
 	"github.com/ducthanh98/server-kit/kit/consumer/input"
-	log "github.com/sirupsen/logrus"
+	"github.com/ducthanh98/server-kit/kit/logger"
 	"sync"
 	"time"
 
@@ -52,7 +52,7 @@ func run(ctx context.Context, task *Task, name string, consumerDef ConsumerDef,
 			for {
 				select {
 				case <-tick.C:
-					log.Debugf(`{"type": "consumer", "counter": {"success": %v, "fail_retried": %v, "drop": %v}}`,
+					logger.Log.Debugf(`{"type": "consumer", "counter": {"success": %v, "fail_retried": %v, "drop": %v}}`,
 						success, retry, drop)
 				case <-ctx.Done():
 					return
@@ -86,7 +86,7 @@ func run(ctx context.Context, task *Task, name string, consumerDef ConsumerDef,
 							}
 							err := task.producer.PublishMessage(republishMsg)
 							if err != nil {
-								log.Warnf("Cannot republish message %v. %v", string(d.Body), err)
+								logger.Log.Warnf("Cannot republish message %v. %v", string(d.Body), err)
 								_ = d.Nack(false, true)
 							} else {
 								_ = d.Ack(false)
@@ -100,7 +100,7 @@ func run(ctx context.Context, task *Task, name string, consumerDef ConsumerDef,
 				case <-ctx.Done():
 					// exit consumer
 					consumer.Close()
-					log.Debugf("Exiting %v...", name)
+					logger.Log.Debugf("Exiting %v...", name)
 					return
 
 				default:
@@ -110,5 +110,5 @@ func run(ctx context.Context, task *Task, name string, consumerDef ConsumerDef,
 		}, int(handler.Replica))
 
 	}
-	log.Infof("Exited consumer %v...", name)
+	logger.Log.Infof("Exited consumer %v...", name)
 }

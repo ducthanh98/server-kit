@@ -2,7 +2,7 @@ package postgresql_driver
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
+	"github.com/ducthanh98/server-kit/kit/logger"
 	"github.com/spf13/viper"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -12,7 +12,7 @@ import (
 type PostgresqlDriver struct {
 }
 
-type postgresqlConfiguration struct {
+type PostgresqlConfiguration struct {
 	Port     int
 	Host     string
 	Username string
@@ -21,9 +21,13 @@ type postgresqlConfiguration struct {
 	Debug    bool
 }
 
-func DefaultPostgresqlFromConfig(opts *postgresqlConfiguration) *postgresqlConfiguration {
+func DefaultPostgresqlFromConfig(con interface{}) *PostgresqlConfiguration {
+	var opts *PostgresqlConfiguration
+	if con != nil {
+		opts = con.(*PostgresqlConfiguration)
+	}
 	if opts == nil {
-		opts = &postgresqlConfiguration{
+		opts = &PostgresqlConfiguration{
 			Host:     viper.GetString("postgresql.host"),
 			Port:     viper.GetInt("postgresql.port"),
 			Username: viper.GetString("postgresql.username"),
@@ -36,9 +40,9 @@ func DefaultPostgresqlFromConfig(opts *postgresqlConfiguration) *postgresqlConfi
 	return opts
 }
 
-func (d PostgresqlDriver) NewConnection() (*gorm.DB, error) {
-	opts := DefaultPostgresqlFromConfig(nil)
-	log.Info("PARAM: ", buildPostgresConnectionParam(opts))
+func (d PostgresqlDriver) NewConnection(con interface{}) (*gorm.DB, error) {
+	opts := DefaultPostgresqlFromConfig(con)
+	logger.Log.Info("PARAM: ", buildPostgresConnectionParam(opts))
 	db, err := gorm.Open(postgres.Open(buildPostgresConnectionParam(opts)), &gorm.Config{})
 	if err != nil {
 		return nil, err
@@ -51,7 +55,7 @@ func (d PostgresqlDriver) NewConnection() (*gorm.DB, error) {
 	return db, nil
 }
 
-func buildPostgresConnectionParam(opts *postgresqlConfiguration) string {
+func buildPostgresConnectionParam(opts *PostgresqlConfiguration) string {
 	param := fmt.Sprintf(
 		"postgresql://%v:%v@%v:%v/%v",
 		opts.Username,

@@ -5,8 +5,8 @@ import (
 	"github.com/ducthanh98/server-kit/kit/app"
 	"github.com/ducthanh98/server-kit/kit/config"
 	queue "github.com/ducthanh98/server-kit/kit/drivers/rabbitmq-driver"
+	"github.com/ducthanh98/server-kit/kit/logger"
 	"github.com/ducthanh98/server-kit/kit/utils/signal"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"time"
 )
@@ -79,7 +79,7 @@ func NewWorker(onClose Callback) *Worker {
 
 	// handle sigterm
 	signal.HandleSigterm(func() {
-		log.Infof("Stopping...")
+		logger.Log.Infof("Stopping...")
 		if onClose != nil {
 			onClose(w)
 		}
@@ -93,12 +93,13 @@ type CtxKey string
 
 func (w *Worker) initCommon() {
 	config.LoadConfig()
+	w.InitLogger()
 }
 
 func (w *Worker) loadTaskDef(defFile string) *Task {
 	var taskDefinition string
 	var err error
-	log.Debug("Loading task....")
+	logger.Log.Debug("Loading task....")
 	if defFile != "" {
 		taskDefinition, err = config.ReadRawFile(defFile)
 	} else {
@@ -107,7 +108,7 @@ func (w *Worker) loadTaskDef(defFile string) *Task {
 	}
 
 	if err != nil || taskDefinition == "" {
-		log.Fatal("Cannot read task definition", w.TaskDefinitionURI, err)
+		logger.Log.Fatal("Cannot read task definition", w.TaskDefinitionURI, err)
 	}
 
 	ctx := context.Background()
@@ -122,13 +123,13 @@ func (w *Worker) loadTaskDef(defFile string) *Task {
 		cancelFunc:      cancelFunc, ctx: newCtx,
 	}
 	w.task = &task
-	log.Debug("Loading task....done")
+	logger.Log.Debug("Loading task....done")
 	return &task
 }
 
 // Walk --
 func (w *Worker) Walk() {
-	log.Debug("Start consumer")
+	logger.Log.Debug("Start consumer")
 	w.task.start()
 	w.Stop()
 }
@@ -176,15 +177,15 @@ func (w *Worker) GetProducer() *queue.Producer {
 func (w *Worker) GetProducerFromConf() *queue.Producer {
 	p := queue.NewRMQProducerFromDefConf()
 	if p == nil {
-		log.Info("nil producer")
+		logger.Log.Info("nil producer")
 	} else {
 		if err := p.Connect(); err != nil {
-			log.Fatal("Cannot connect to rabbitmq. Please check configuration file for more information", err)
+			logger.Log.Fatal("Cannot connect to rabbitmq. Please check configuration file for more information", err)
 		}
 		p.Start()
 		signal.HandleSigterm(func() {
 			if p != nil {
-				log.Debug("Stop producer")
+				logger.Log.Debug("Stop producer")
 				p.Close()
 			}
 		})
@@ -195,16 +196,16 @@ func (w *Worker) GetProducerFromConf() *queue.Producer {
 // Stop stops worker
 func (w *Worker) Stop() {
 	if w.stopped {
-		log.Info("Call Stop method multiple times")
+		logger.Log.Info("Call Stop method multiple times")
 		return
 	}
 	w.stopped = true
 	if w.task != nil {
-		log.Info("Stop consumer")
+		logger.Log.Info("Stop consumer")
 		defer w.task.stop()
 	}
 	//if w.scheduler != nil {
-	//	log.Info("Stop scheduler")
+	//	logger.Log.Info("Stop scheduler")
 	//	w.scheduler.stop()
 	//}
 	time.Sleep(2 * time.Second)

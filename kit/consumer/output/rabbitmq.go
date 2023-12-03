@@ -4,7 +4,7 @@ import (
 	"github.com/ducthanh98/server-kit/kit/consumer/entity"
 	"github.com/ducthanh98/server-kit/kit/consumer/input"
 	queue "github.com/ducthanh98/server-kit/kit/drivers/rabbitmq-driver"
-	log "github.com/sirupsen/logrus"
+	"github.com/ducthanh98/server-kit/kit/logger"
 
 	"fmt"
 
@@ -34,7 +34,7 @@ type RabbitMQOutput struct {
 
 func preCheckOutputInfo(out *entity.RmqOutputConf) {
 	if out.Exch.Name == "" || out.Mode == "" {
-		log.Fatal("Invalid output information: exchange name or mode is empty")
+		logger.Log.Fatal("Invalid output information: exchange name or mode is empty")
 	}
 }
 
@@ -53,7 +53,7 @@ func BuildRabbitmqOutput(out *entity.RmqOutputConf) (*RabbitMQOutput, error) {
 	}
 
 	if err := producer.ConnectMulti(numThread); err != nil {
-		log.Errorf("Cannot connect to entity due to error: %v", err)
+		logger.Log.Errorf("Cannot connect to entity due to error: %v", err)
 		return nil, fmt.Errorf("cannot connect to rabbitmq. %v", err)
 	}
 

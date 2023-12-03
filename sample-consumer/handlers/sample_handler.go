@@ -4,7 +4,7 @@ import (
 	"github.com/ducthanh98/server-kit/kit/consumer"
 	rabbitmq_driver "github.com/ducthanh98/server-kit/kit/drivers/rabbitmq-driver"
 	redis_driver "github.com/ducthanh98/server-kit/kit/drivers/redis-driver"
-	log "github.com/sirupsen/logrus"
+	"github.com/ducthanh98/server-kit/kit/logger"
 )
 
 // SampleHandler --
@@ -18,7 +18,7 @@ type SampleHandler struct {
 
 // Handle --
 func (h *SampleHandler) Handle(msg []byte) consumer.ProcessStatus {
-	log.Info("MSG: ", string(msg))
+	logger.Log.Info("MSG: ", string(msg))
 
 	return consumer.ProcessOK
 }
@@ -41,10 +41,10 @@ func (h *SampleHandler) SetProducer(p *rabbitmq_driver.Producer) {
 func (h *SampleHandler) Init(w *consumer.Worker) {
 	// do initialize works
 	//h.Redis = w.App.CreateRedisConnection(nil)
-	log.Info("dummy worker")
+	logger.Log.Info("dummy worker")
 }
 
 // Close --
 func (h *SampleHandler) Close(w *consumer.Worker) {
-	log.Info("Closing...")
+	logger.Log.Info("Closing...")
 }

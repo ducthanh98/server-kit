@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/ducthanh98/server-kit/kit/consumer/entity"
 	queue "github.com/ducthanh98/server-kit/kit/drivers/rabbitmq-driver"
+	"github.com/ducthanh98/server-kit/kit/logger"
 	"github.com/ducthanh98/server-kit/kit/utils/string_utils"
 	amqp "github.com/rabbitmq/amqp091-go"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -45,7 +45,7 @@ type RabbitMQInput struct {
 
 func preCheckInputInfo(inp *entity.RmqInputConf) {
 	if inp.Exch.Name == "" || inp.Mode == "" {
-		log.Fatal("Invalid input information: exchange name or mode is empty")
+		logger.Log.Fatal("Invalid input information: exchange name or mode is empty")
 	}
 }
 
@@ -71,13 +71,13 @@ func BuildRabbitmqInput(ctx context.Context, groupName string,
 	consumer := queue.NewRMQConsumerFConfig(uri, inp)
 
 	if err := consumer.Connect(); err != nil {
-		log.Errorln("Error when connect consumer", "details", err)
+		logger.Log.Errorw("Error when connect consumer", "details", err)
 		return nil, fmt.Errorf("cannot connect to rabbitmq. %v", err)
 	}
 
 	deliveries, err := consumer.AnnounceQueue()
 	if err != nil {
-		log.Errorln("Error when calling AnnounceQueue()", "errError()", err.Error())
+		logger.Log.Errorw("Error when calling AnnounceQueue()", "errError()", err.Error())
 		return nil, fmt.Errorf("cannot create or consume from exch/queue. %v. %v", inp.Exch, inp.Queue)
 	}
 

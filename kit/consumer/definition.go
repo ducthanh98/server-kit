@@ -3,7 +3,7 @@ package consumer
 import (
 	"encoding/json"
 	"github.com/ducthanh98/server-kit/kit/consumer/entity"
-	log "github.com/sirupsen/logrus"
+	"github.com/ducthanh98/server-kit/kit/logger"
 )
 
 const DefaultSleepTimeWhenIdle = 100
@@ -54,7 +54,7 @@ func parseTaskDef(def string) *GConsumerDef {
 	}{}
 
 	if err := json.Unmarshal([]byte(def), &taskDef); err != nil {
-		log.Fatal("Cannot parse task info from input", def)
+		logger.Log.Fatal("Cannot parse task info from input", def)
 	}
 
 	result := GConsumerDef{Type: taskDef.Type, Name: taskDef.Name, Group: taskDef.Group}
@@ -62,12 +62,12 @@ func parseTaskDef(def string) *GConsumerDef {
 	for _, inp := range taskDef.Inputs {
 		inpM, ok := inp.(map[string]interface{})
 		if !ok {
-			log.Warn("Bad input. ", inp)
+			logger.Log.Warn("Bad input. ", inp)
 			continue
 		}
 		t, ok := inpM["mode"]
 		if !ok {
-			log.Warn("Bad input. Mode not found", inp)
+			logger.Log.Warn("Bad input. Mode not found", inp)
 			continue
 		}
 		var rit interface{}
@@ -75,7 +75,7 @@ func parseTaskDef(def string) *GConsumerDef {
 		case "rabbitmq":
 			rit = &entity.RmqInputConf{}
 		default:
-			log.Warn("Currently not supported. ", t)
+			logger.Log.Warn("Currently not supported. ", t)
 			continue
 		}
 
@@ -90,12 +90,12 @@ func parseTaskDef(def string) *GConsumerDef {
 	for _, out := range taskDef.Outputs {
 		outM, ok := out.(map[string]interface{})
 		if !ok {
-			log.Warn("Bad output. ", out)
+			logger.Log.Warn("Bad output. ", out)
 			continue
 		}
 		t, ok := outM["mode"]
 		if !ok {
-			log.Warn("Bad input. Mode not found", out)
+			logger.Log.Warn("Bad input. Mode not found", out)
 			continue
 		}
 		var rit interface{}
@@ -103,7 +103,7 @@ func parseTaskDef(def string) *GConsumerDef {
 		case "rabbitmq":
 			rit = &entity.RmqOutputConf{}
 		default:
-			log.Warn("Currently not supported. ", t)
+			logger.Log.Warn("Currently not supported. ", t)
 			continue
 		}
 

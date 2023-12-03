@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	log "github.com/sirupsen/logrus"
+	"github.com/ducthanh98/server-kit/kit/logger"
 	"github.com/spf13/viper"
 	"io"
 	"io/ioutil"
@@ -46,7 +46,7 @@ func NewAmazonS3(opts *AmazonS3Config) *AmazonS3 {
 	})
 
 	if err != nil {
-		log.Errorf("Get session AWS errors, %v", err)
+		logger.Log.Errorf("Get session AWS errors, %v", err)
 		return nil
 	}
 
@@ -140,12 +140,12 @@ func (s *AmazonS3) Delete(listKey []string, bucket string) error {
 		if aerr, ok := err.(awserr.Error); ok {
 			switch aerr.Code() {
 			default:
-				log.Errorf("Delete AWS errors, %v", err)
+				logger.Log.Errorf("Delete AWS errors, %v", err)
 			}
 		} else {
 			// Print the error, cast err to awserr.Error to get the Code and
 			// Message from an error.
-			log.Errorf("Delete AWS errors, %v", err)
+			logger.Log.Errorf("Delete AWS errors, %v", err)
 		}
 		return err
 	}

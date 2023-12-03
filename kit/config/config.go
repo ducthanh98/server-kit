@@ -2,7 +2,7 @@ package config
 
 import (
 	"github.com/ducthanh98/server-kit/kit/utils/io"
-	log "github.com/sirupsen/logrus"
+	"github.com/ducthanh98/server-kit/kit/logger"
 	"github.com/spf13/viper"
 	"os"
 )
@@ -13,9 +13,9 @@ func LoadConfig() {
 	viper.AddConfigPath(".")
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			log.Warnf("Config file not found")
+			logger.Log.Warnf("Config file not found")
 		} else {
-			log.Warnf("Error when loading config file:%v", err)
+			logger.Log.Warnf("Error when loading config file:%v", err)
 		}
 	}
 }

@@ -8,3 +8,5 @@ const (
 	MysqlDriver      types.Driver = "mysql"
 	PostgresqlDriver types.Driver = "postgresql"
 )
+
+const TokenKeyUserType = "Authorization"

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/ducthanh98/server-kit/kit/config"
 	"github.com/ducthanh98/server-kit/kit/consumer/entity"
+	"github.com/ducthanh98/server-kit/kit/logger"
 	"github.com/ducthanh98/server-kit/kit/utils/string_utils"
-	log "github.com/sirupsen/logrus"
 	"math"
 	"net"
 	"runtime"
@@ -171,7 +171,7 @@ func (p *Producer) reconnect() error {
 	p.status = false
 	time.Sleep(20 * time.Second)
 	if err := p.connectQueue(); err != nil {
-		log.Errorln("Could not connect in reconnect call", "errError()", err.Error())
+		logger.Log.Errorw("Could not connect in reconnect call", "errError()", err.Error())
 		return err
 	}
 
@@ -195,11 +195,11 @@ func (p *Producer) connectQueue() error {
 	if p.config == nil {
 		err = errors.New("missing entity configuration")
 
-		log.Errorln(err.Error())
+		logger.Log.Errorw(err.Error())
 		return err
 	}
 
-	log.Infof("Connecting to %q", string_utils.CensorString(p.config.URI))
+	logger.Log.Infof("Connecting to %q", string_utils.CensorString(p.config.URI))
 	p.conn, err = amqp.DialConfig(p.config.URI, amqp.Config{
 		Dial: func(network, addr string) (net.Conn, error) {
 			return net.DialTimeout(network, addr, DefaultNetworkTimeoutInSec*time.Second)
@@ -213,10 +213,10 @@ func (p *Producer) connectQueue() error {
 	go func() {
 		// Waits here for the channel to be closed
 		closed := <-p.conn.NotifyClose(make(chan *amqp.Error))
-		log.Debugf("Closing: %s", closed)
+		logger.Log.Debugf("Closing: %s", closed)
 
 		if closed != nil {
-			log.Info("Closing channel: ", closed.Reason, closed.Recover, closed.Code, closed.Server, closed.Error())
+			logger.Log.Info("Closing channel: ", closed.Reason, closed.Recover, closed.Code, closed.Server, closed.Error())
 			// Let Handle know it's not time to reconnect
 			// ensure goroutine go to end in every case
 			select {
@@ -227,7 +227,7 @@ func (p *Producer) connectQueue() error {
 		}
 	}()
 
-	log.Info("Connected")
+	logger.Log.Info("Connected")
 
 	p.status = true
 
@@ -254,7 +254,7 @@ func (p *Producer) DeclareSpecificExch(xch *RmqConfiguration) error {
 	}
 	defer ch.Close()
 
-	log.Debugf("Got Channel, declaring Exchange (%q)", xch.Name)
+	logger.Log.Debugf("Got Channel, declaring Exchange (%q)", xch.Name)
 	if err = ch.ExchangeDeclare(
 		xch.Name,
 		xch.Type,
@@ -288,7 +288,7 @@ func (p *Producer) publish(c *amqp.Channel, mi *messageInfo) error {
 		atomic.AddInt64(&(p.errorCounter), 1)
 		err = fmt.Errorf("Cannot publish message to exchange, %v - %v - %v - %v - %v. %v",
 			mi.xchName, mi.routingKey, mi.mandatory, mi.immediate, string(mi.msg), err)
-		log.Error(err.Error())
+		logger.Log.Error(err.Error())
 		return err
 	} else if mi.retries > 0 {
 		atomic.AddInt64(&p.errorCounter, -mi.retries)
@@ -327,7 +327,7 @@ func (p *Producer) publishWithTimeout(mess *messageInfo) error {
 	select {
 	case p.messages <- mess:
 	case <-time.After(time.Duration(RabbitProducerTimeout) * time.Millisecond):
-		log.Warn("Publish message timeout :", mess.xchName, ",", RabbitProducerTimeout, ", ", string(mess.msg))
+		logger.Log.Warn("Publish message timeout :", mess.xchName, ",", RabbitProducerTimeout, ", ", string(mess.msg))
 		return errors.New("publish message to rabbbit timeout")
 	}
 
@@ -380,9 +380,9 @@ func (p *Producer) Start() {
 
 	switch level {
 	case "info":
-		logFmt = log.Infof
+		logFmt = logger.Log.Infof
 	default:
-		logFmt = log.Debugf
+		logFmt = logger.Log.Debugf
 	}
 
 	stopTicker := make(chan struct{})
@@ -431,12 +431,12 @@ func (p *Producer) Start() {
 					err := p.publish(c, msg)
 					if err != nil {
 						// maybe channel is dead, get new one
-						log.Warnf("Maybe channel is dead, get new one. %v", id)
+						logger.Log.Warnf("Maybe channel is dead, get new one. %v", id)
 						c.Close()
 						m.Lock()
 
 						if isDebug {
-							log.Warnf("Create chanel %v: %v", id)
+							logger.Log.Warnf("Create chanel %v: %v", id)
 						}
 
 						var err = errors.New("start")
@@ -447,13 +447,13 @@ func (p *Producer) Start() {
 							}
 
 							if isDebug {
-								log.Warnf("Create chanel is fail %v: %v", id, err)
+								logger.Log.Warnf("Create chanel is fail %v: %v", id, err)
 							}
 
 							c, err = p.conn.Channel()
 						}
 						m.Unlock()
-						log.Infof("Got new channel! %v", id)
+						logger.Log.Infof("Got new channel! %v", id)
 						msg.retries++
 						go func() {
 							p.publishWithTimeout(msg)
@@ -471,7 +471,7 @@ func (p *Producer) Start() {
 			// c.done is passed non nil values
 			if err = <-p.done; err != nil {
 				if strings.Contains(err.Error(), "channel closed") && !p.IsClosed() { // reconnect case
-					log.Errorln("Disconnected", "err", err)
+					logger.Log.Errorw("Disconnected", "err", err)
 					p.status = false
 					err = p.reconnect()
 					retry := 0
@@ -482,17 +482,17 @@ func (p *Producer) Start() {
 						time.Sleep(time.Duration(base+int(math.Pow(float64(step), float64(exp)))) * time.Millisecond)
 						// Very likely chance of failing
 						// should not cause worker to terminate
-						log.Errorln("Reconnecting Error. Try again", "err", err)
+						logger.Log.Errorw("Reconnecting Error. Try again", "err", err)
 						retry++
 						if retry > p.retries {
 							panic(fmt.Errorf("Cannot retry connection after %v times", p.retries))
 						}
 						err = p.reconnect()
 					}
-					log.Infof("Reconnected")
+					logger.Log.Infof("Reconnected")
 				} else { // stop case
 					p.conn.Close()
-					log.Infof("Stopped")
+					logger.Log.Infof("Stopped")
 					return
 				}
 			}

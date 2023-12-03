@@ -2,7 +2,7 @@ package image
 
 import (
 	"encoding/base64"
-	log "github.com/sirupsen/logrus"
+	"github.com/ducthanh98/server-kit/kit/logger"
 	"io/ioutil"
 	"net/http"
 )
@@ -10,7 +10,7 @@ import (
 func ConvertImageToBase4(path string) (string, error) {
 	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
-		log.Errorf("Error when read %v : %v", path, err)
+		logger.Log.Errorf("Error when read %v : %v", path, err)
 		return "", err
 	}
 
